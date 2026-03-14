@@ -1,18 +1,18 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import {
-    clearGameHistory,
-    deleteGameHistoryById,
-    getGameHistory,
+  clearGameHistory,
+  deleteGameHistoryById,
+  getGameHistory,
 } from '../storage/storage';
 import { getRankLabel } from '../utils/ranking';
 
@@ -48,64 +48,90 @@ export default function HistoryScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>히스토리</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.topCard}>
+          <Text style={styles.title}>🎴 히스토리</Text>
+          <Text style={styles.subtitle}>이전 게임 기록을 모아볼 수 있어요</Text>
+        </View>
 
         {history.length > 0 && (
           <TouchableOpacity
             style={styles.clearButton}
             onPress={() => setShowDeleteAllModal(true)}
+            activeOpacity={0.85}
           >
             <Text style={styles.clearButtonText}>기록 전체 삭제</Text>
           </TouchableOpacity>
         )}
 
         {history.length === 0 ? (
-          <Text style={styles.emptyText}>아직 저장된 게임 기록이 없어요.</Text>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>🗂️</Text>
+            <Text style={styles.emptyTitle}>아직 저장된 기록이 없어요</Text>
+            <Text style={styles.emptyText}>
+              게임이 끝나면 결과가 여기에 차곡차곡 저장돼요
+            </Text>
+          </View>
         ) : (
           history.map((game) => (
             <TouchableOpacity
-            key={game.id}
-            style={styles.card}
-            activeOpacity={0.85}
-            onPress={() =>
-            router.push({
-                pathname: '/historyDetail',
-                params: {
+              key={game.id}
+              style={styles.card}
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/historyDetail',
+                  params: {
                     game: JSON.stringify(game),
-                },
-            })
-            }
-          >
-            <View style={styles.cardHeader}>
+                  },
+                })
+              }
+            >
+              <View style={styles.cardHeader}>
                 <Text style={styles.date}>{game.date}</Text>
 
                 <TouchableOpacity
-                    style={styles.deleteOneButton}
-                    onPress={(e) => {
-                        e.stopPropagation?.();
-                        setSelectedGameId(game.id);
-                    }}
+                  style={styles.deleteOneButton}
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    setSelectedGameId(game.id);
+                  }}
+                  activeOpacity={0.85}
                 >
-                    <Text style={styles.deleteOneButtonText}>삭제</Text>
+                  <Text style={styles.deleteOneButtonText}>삭제</Text>
                 </TouchableOpacity>
-            </View>
+              </View>
 
-            <Text style={styles.mainText}>총 {game.totalRounds}판</Text>
-            <Text style={styles.mainText}>
-                1등 {game.winner} ({game.winnerScore}점)
-            </Text>
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryBadge}>
+                  <Text style={styles.summaryBadgeText}>{game.totalRounds}판</Text>
+                </View>
+                <View style={styles.winnerBadge}>
+                  <Text style={styles.winnerBadgeText}>🏆 1등 {game.winner}</Text>
+                </View>
+              </View>
 
-            <View style={styles.rankingBox}>
+              <Text style={styles.mainText}>
+                가장 낮은 점수: {game.winnerScore}점
+              </Text>
+
+              <View style={styles.rankingBox}>
                 {game.ranking.map((item, index) => (
-                    <View key={item.name + index} style={styles.rankRow}>
-                        <Text style={styles.rankText}>
-                            {getRankLabel(item)} {item.name}
-                        </Text>
-                        <Text style={styles.rankText}>{item.score}점</Text>
-                    </View>
+                  <View key={item.name + index} style={styles.rankRow}>
+                    <Text style={[styles.rankText, index === 0 && styles.firstRankText]}>
+                      {getRankLabel(item)} {item.name}
+                    </Text>
+                    <Text
+                      style={[styles.rankScoreText, index === 0 && styles.firstRankText]}
+                    >
+                      {item.score}점
+                    </Text>
+                  </View>
                 ))}
-            </View>
+              </View>
             </TouchableOpacity>
           ))
         )}
@@ -180,43 +206,96 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 18,
     paddingBottom: 40,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF7F3',
     flexGrow: 1,
+  },
+  topCard: {
+    marginTop: 8,
+    backgroundColor: '#FFFDFC',
+    borderWidth: 1,
+    borderColor: '#F1DDD7',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 20,
-    color: '#111',
+    color: '#111111',
+  },
+  subtitle: {
+    marginTop: 8,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#7A6B66',
+    lineHeight: 22,
   },
   clearButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#222',
+    marginTop: 16,
+    backgroundColor: '#FFF1EE',
+    borderWidth: 1,
+    borderColor: '#F1C9C1',
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 20,
+    borderRadius: 12,
   },
   clearButtonText: {
-    color: '#fff',
+    color: '#B33A30',
     fontSize: 14,
     fontWeight: '600',
   },
+  emptyCard: {
+    marginTop: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
+    borderRadius: 20,
+    paddingVertical: 34,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  emptyEmoji: {
+    fontSize: 28,
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F1A18',
+  },
   emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 10,
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8B7A73',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   card: {
     borderWidth: 1,
-    borderColor: '#ececec',
-    backgroundColor: '#fafafa',
-    borderRadius: 14,
+    borderColor: '#F0DEDA',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     padding: 16,
-    marginBottom: 14,
+    marginTop: 14,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -225,46 +304,89 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: '#777',
-    marginBottom: 10,
+    fontWeight: '500',
+    color: '#8B7A73',
     flex: 1,
+    marginRight: 12,
   },
   deleteOneButton: {
-    marginLeft: 12,
-    backgroundColor: '#efefef',
-    paddingVertical: 6,
+    backgroundColor: '#F7EEEB',
+    paddingVertical: 7,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   deleteOneButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#444',
+    color: '#6A5B56',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+  },
+  summaryBadge: {
+    backgroundColor: '#FFF1EE',
+    borderWidth: 1,
+    borderColor: '#F1C9C1',
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  summaryBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#B33A30',
+  },
+  winnerBadge: {
+    backgroundColor: '#FFF6EC',
+    borderWidth: 1,
+    borderColor: '#EDC98D',
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  winnerBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#7A5318',
   },
   mainText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#222',
-    marginBottom: 6,
+    color: '#2A211F',
+    marginTop: 12,
   },
   rankingBox: {
-    marginTop: 12,
-    paddingTop: 10,
+    marginTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
+    borderTopColor: '#F3ECE9',
   },
   rankRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    alignItems: 'center',
+    paddingVertical: 6,
   },
   rankText: {
     fontSize: 15,
-    color: '#333',
+    fontWeight: '500',
+    color: '#3A312E',
+  },
+  rankScoreText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3A312E',
+  },
+  firstRankText: {
+    color: '#D93A2F',
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(17, 17, 17, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -272,19 +394,22 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FFFDFC',
+    borderRadius: 18,
     padding: 20,
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111',
+    color: '#111111',
   },
   modalMessage: {
     marginTop: 10,
     fontSize: 15,
-    color: '#555',
+    fontWeight: '500',
+    color: '#5C514D',
     lineHeight: 22,
   },
   modalButtonRow: {
@@ -295,23 +420,23 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 13,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#efefef',
+    backgroundColor: '#F7EEEB',
   },
   deleteButton: {
-    backgroundColor: '#222',
+    backgroundColor: '#D93A2F',
   },
   cancelButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222',
+    color: '#463C39',
   },
   deleteButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: '#FFFFFF',
   },
 });

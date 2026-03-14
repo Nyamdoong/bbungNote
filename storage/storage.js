@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const GAME_HISTORY_KEY = 'gameHistory';
+const SETTINGS_KEY = 'gameSettings';
+const RECENT_PLAYERS_KEY = 'recentPlayers';
 
 export async function saveGameHistory(newGame) {
   try {
@@ -41,5 +43,79 @@ export async function deleteGameHistoryById(targetId) {
     await AsyncStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error('선택 히스토리 삭제 실패:', error);
+  }
+}
+
+export async function saveSettings(settings) {
+  try {
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('설정 저장 실패:', error);
+  }
+}
+
+export async function getSettings() {
+  try {
+    const data = await AsyncStorage.getItem(SETTINGS_KEY);
+
+    if (!data) {
+      return {
+        defaultRounds: 15,
+        stopThreshold: 3,
+      };
+    }
+
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('설정 불러오기 실패:', error);
+    return {
+      defaultRounds: 15,
+      stopThreshold: 3,
+    };
+  }
+}
+
+export async function saveRecentPlayers(playerNames) {
+  try {
+    const cleanedNames = playerNames
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+
+    if (cleanedNames.length === 0) {
+      return;
+    }
+
+    const existing = await AsyncStorage.getItem(RECENT_PLAYERS_KEY);
+    const parsed = existing ? JSON.parse(existing) : [];
+
+    const merged = [...cleanedNames, ...parsed];
+    const unique = [];
+
+    for (const name of merged) {
+      const alreadyExists = unique.some(
+        (savedName) => savedName.toLowerCase() === name.toLowerCase()
+      );
+
+      if (!alreadyExists) {
+        unique.push(name);
+      }
+    }
+
+    await AsyncStorage.setItem(
+      RECENT_PLAYERS_KEY,
+      JSON.stringify(unique.slice(0, 12))
+    );
+  } catch (error) {
+    console.error('최근 플레이어 저장 실패:', error);
+  }
+}
+
+export async function getRecentPlayers() {
+  try {
+    const data = await AsyncStorage.getItem(RECENT_PLAYERS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('최근 플레이어 불러오기 실패:', error);
+    return [];
   }
 }

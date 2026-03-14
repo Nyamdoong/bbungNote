@@ -1,20 +1,21 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#111',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: '#D93A2F',
+        tabBarInactiveTintColor: '#8B7A73',
         tabBarStyle: {
+          backgroundColor: '#FFFDFC',
+          borderTopColor: '#F0DEDA',
           height: 64,
-          paddingTop: 6,
           paddingBottom: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
@@ -22,7 +23,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '새 게임',
+          title: '게임',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="game-controller-outline" size={size} color={color} />
+          ),
         }}
       />
 
@@ -30,6 +34,9 @@ export default function TabLayout() {
         name="history"
         options={{
           title: '히스토리',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="time-outline" size={size} color={color} />
+          ),
         }}
       />
 
@@ -37,6 +44,9 @@ export default function TabLayout() {
         name="rules"
         options={{
           title: '룰',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" size={size} color={color} />
+          ),
         }}
       />
 
@@ -44,6 +54,9 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: '설정',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

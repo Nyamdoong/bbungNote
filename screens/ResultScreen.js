@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { saveGameHistory } from '../storage/storage';
 import { addRankToList, getRankLabel } from '../utils/ranking';
@@ -43,14 +43,14 @@ export default function ResultScreen() {
 
   const ranking = useMemo(() => {
     const sorted = players
-        .map((name, index) => ({
-            name,
-            score: totalScores[index] ?? 0,
-        }))
-    .sort((a, b) => a.score - b.score);
+      .map((name, index) => ({
+        name,
+        score: totalScores[index] ?? 0,
+      }))
+      .sort((a, b) => a.score - b.score);
 
     return addRankToList(sorted);
-    }, [players, totalScores]);
+  }, [players, totalScores]);
 
   const winner = ranking[0];
 
@@ -76,7 +76,7 @@ export default function ResultScreen() {
     };
 
     saveResult();
-   }, [players, totalScores, totalRounds, winner, ranking, roundHistory]);
+  }, [players, totalScores, totalRounds, winner, ranking, roundHistory]);
 
   const getRoundScoreLabel = (score) => {
     if (score.bagaji === 30) {
@@ -119,27 +119,49 @@ export default function ResultScreen() {
     });
   };
 
+  const getRankEmoji = (index) => {
+    if (index === 0) return '🏆';
+
+    const numberEmoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
+
+    return numberEmoji[index] || '🔹';
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>게임 결과</Text>
-      <Text style={styles.subtitle}>총 {totalRounds}판 완료</Text>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.topCard}>
+        <Text style={styles.title}>🎴 게임 결과</Text>
+        <Text style={styles.subtitle}>총 {totalRounds}판 완료</Text>
+      </View>
 
       {winner && (
         <View style={styles.winnerCard}>
           <Text style={styles.winnerLabel}>최종 1등</Text>
           <Text style={styles.winnerName}>{winner.name}</Text>
           <Text style={styles.winnerScore}>{winner.score}점</Text>
+          <View style={styles.winnerBadge}>
+            <Text style={styles.winnerBadgeText}>🏆 가장 낮은 점수로 승리!</Text>
+          </View>
         </View>
       )}
 
-      <View style={styles.section}>
+      <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>최종 순위</Text>
+
         {ranking.map((item, index) => (
           <View key={item.name + index} style={styles.rankRow}>
-            <Text style={styles.rankText}>
-              {getRankLabel(item)} {item.name}
+            <View style={styles.rankLeft}>
+              <Text style={styles.rankIcon}>{getRankEmoji(index)}</Text>
+              <Text style={[styles.rankText, index === 0 && styles.firstRankText]}>
+                {getRankLabel(item)} {item.name}
+              </Text>
+            </View>
+            <Text style={[styles.rankScore, index === 0 && styles.firstRankText]}>
+              {item.score}점
             </Text>
-            <Text style={styles.rankText}>{item.score}점</Text>
           </View>
         ))}
       </View>
@@ -147,14 +169,15 @@ export default function ResultScreen() {
       <TouchableOpacity
         style={styles.toggleButton}
         onPress={() => setShowRoundHistory((prev) => !prev)}
+        activeOpacity={0.85}
       >
         <Text style={styles.toggleButtonText}>
-          {showRoundHistory ? '판별 기록 숨기기' : '판별 기록 보기'}
+          {showRoundHistory ? '판별 기록 접기' : '판별 기록 보기'}
         </Text>
       </TouchableOpacity>
 
       {showRoundHistory && (
-        <View style={styles.section}>
+        <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>판별 기록</Text>
 
           {roundHistory.map((round) => {
@@ -179,8 +202,9 @@ export default function ResultScreen() {
       <TouchableOpacity
         style={styles.restartButton}
         onPress={() => router.replace('/(tabs)/')}
+        activeOpacity={0.85}
       >
-        <Text style={styles.restartButtonText}>새 게임 시작</Text>
+        <Text style={styles.restartButtonText}>🎴 새 게임 시작</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -188,117 +212,198 @@ export default function ResultScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 18,
     paddingBottom: 40,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF7F3',
+  },
+  topCard: {
+    marginTop: 8,
+    backgroundColor: '#FFFDFC',
+    borderWidth: 1,
+    borderColor: '#F1DDD7',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    marginTop: 20,
+    color: '#111111',
+    textAlign: 'center',
   },
   subtitle: {
     marginTop: 8,
-    fontSize: 17,
-    color: '#666',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#7A6B66',
+    textAlign: 'center',
   },
   winnerCard: {
-    marginTop: 24,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    marginTop: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   winnerLabel: {
-    fontSize: 15,
-    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B7A73',
     marginBottom: 8,
   },
   winnerName: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#111',
+    color: '#111111',
   },
   winnerScore: {
     marginTop: 8,
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111',
+    fontWeight: '600',
+    color: '#D93A2F',
   },
-  section: {
-    marginTop: 28,
+  winnerBadge: {
+    marginTop: 14,
+    backgroundColor: '#FFF1EE',
+    borderWidth: 1,
+    borderColor: '#F1C9C1',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  winnerBadgeText: {
+    color: '#B33A30',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sectionCard: {
+    marginTop: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 19,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F1A18',
     marginBottom: 12,
   },
   rankRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F3ECE9',
+  },
+  rankLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  rankIcon: {
+    width: 24,
+    fontSize: 15,
+    color: '#A08B84',
   },
   rankText: {
     fontSize: 16,
-    color: '#222',
+    fontWeight: '500',
+    color: '#2A211F',
+  },
+  rankScore: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2A211F',
+  },
+  firstRankText: {
+    color: '#D93A2F',
+    fontWeight: '700',
   },
   toggleButton: {
-    marginTop: 24,
-    backgroundColor: '#efefef',
-    borderRadius: 12,
-    paddingVertical: 14,
+    marginTop: 18,
+    backgroundColor: '#FFF1EE',
+    borderWidth: 1,
+    borderColor: '#F1C9C1',
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: 'center',
   },
   toggleButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#222',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#B33A30',
   },
   roundCard: {
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ececec',
-    backgroundColor: '#fafafa',
+    borderColor: '#F1E2DD',
+    backgroundColor: '#FFFCFB',
     marginBottom: 12,
   },
   roundTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 10,
-    color: '#111',
+    color: '#111111',
   },
   scoreRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
+    alignItems: 'flex-start',
+    paddingVertical: 7,
     gap: 12,
   },
   playerText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#222',
+    fontWeight: '600',
+    color: '#2A211F',
     minWidth: 60,
   },
   scoreText: {
     flex: 1,
     fontSize: 15,
-    color: '#444',
+    fontWeight: '400',
+    color: '#5C514D',
     textAlign: 'right',
+    lineHeight: 22,
   },
   restartButton: {
-    marginTop: 30,
-    backgroundColor: '#222',
-    borderRadius: 12,
-    paddingVertical: 16,
+    marginTop: 24,
+    backgroundColor: '#D93A2F',
+    borderRadius: 16,
+    paddingVertical: 17,
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   restartButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

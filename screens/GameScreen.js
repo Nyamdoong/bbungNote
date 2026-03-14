@@ -1,13 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const MAX_BASE_SCORE = 56;
@@ -82,14 +83,60 @@ export default function GameScreen() {
   };
 
   const toggleBagaji = (index, amount) => {
-    const next = [...roundInputs];
-    next[index].bagaji = next[index].bagaji === amount ? 0 : amount;
-    setRoundInputs(next);
+    const nextInputs = [...roundInputs];
+    nextInputs[index].bagaji = nextInputs[index].bagaji === amount ? 0 : amount;
+    setRoundInputs(nextInputs);
   };
 
   const getFinalScore = (input) => {
     const base = Number(input.baseScore || 0);
     return base + input.bagaji;
+  };
+
+  const getBagajiMeta = (bagaji) => {
+    if (bagaji === 30) {
+      return {
+        label: '뻥바가지!',
+        emoji: '💥',
+        short: '뻥!',
+      };
+    }
+
+    if (bagaji === 50) {
+      return {
+        label: '스톱바가지!',
+        emoji: '🛑',
+        short: '스톱!',
+      };
+    }
+
+    return {
+      label: '',
+      emoji: '🎴',
+      short: '',
+    };
+  };
+
+  const getPreviewText = (input) => {
+    const base = Number(input.baseScore || 0);
+    const bagaji = input.bagaji;
+    const finalScore = base + bagaji;
+
+    if (!input.baseScore) {
+      if (bagaji === 30) return '💥 뻥바가지 적용 대기 중!';
+      if (bagaji === 50) return '🛑 스톱바가지 적용 대기 중!';
+      return '🎴 이번 판 점수를 입력해주세요';
+    }
+
+    if (bagaji === 30) {
+      return `${base} + 30 = ${finalScore}  ·  💥 뻥바가지!`;
+    }
+
+    if (bagaji === 50) {
+      return `${base} + 50 = ${finalScore}  ·  🛑 스톱바가지!`;
+    }
+
+    return `🎴 이번 판 합계 ${finalScore}`;
   };
 
   const ranking = useMemo(() => {
@@ -119,10 +166,7 @@ export default function GameScreen() {
 
     if (firstErrorIndex !== -1) {
       focusInput(firstErrorIndex);
-
-      const errorMessage =
-        nextErrors[firstErrorIndex] || '입력값을 다시 확인해주세요.';
-      Alert.alert('입력 확인', errorMessage);
+      Alert.alert('입력 확인', nextErrors[firstErrorIndex]);
       return;
     }
 
@@ -171,254 +215,587 @@ export default function GameScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>게임 진행</Text>
-      <Text style={styles.subtitle}>
-        {currentRound} / {totalRounds} 판
-      </Text>
-      <Text style={styles.helperText}>스톱 기준값: {stopThreshold}</Text>
-
-      {players.map((player, index) => {
-        const finalScore = getFinalScore(roundInputs[index]);
-        const hasError = inputErrors[index] !== '';
-
-        return (
-          <View key={index} style={styles.playerCard}>
-            <View style={styles.playerHeader}>
-              <Text style={styles.playerName}>{player}</Text>
-              <Text style={styles.totalScore}>누적 {totalScores[index]}점</Text>
-            </View>
-
-            <Text style={styles.label}>이번 판 점수</Text>
-            <TextInput
-              ref={(ref) => {
-                inputRefs.current[index] = ref;
-              }}
-              style={[styles.input, hasError && styles.inputError]}
-              placeholder="예: 20, -100, 0"
-              keyboardType="numeric"
-              value={roundInputs[index].baseScore}
-              onChangeText={(text) => updateBaseScore(index, text)}
-              returnKeyType="done"
-            />
-
-            {hasError && <Text style={styles.errorText}>{inputErrors[index]}</Text>}
-
-            <Text style={styles.label}>바가지</Text>
-            <View style={styles.bagajiRow}>
-              <TouchableOpacity
-                style={[
-                  styles.bagajiButton,
-                  roundInputs[index].bagaji === 30 && styles.bagajiButtonSelected,
-                ]}
-                onPress={() => toggleBagaji(index, 30)}
-              >
-                <Text
-                  style={[
-                    styles.bagajiButtonText,
-                    roundInputs[index].bagaji === 30 &&
-                      styles.bagajiButtonTextSelected,
-                  ]}
-                >
-                  +30
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.bagajiButton,
-                  roundInputs[index].bagaji === 50 && styles.bagajiButtonSelected,
-                ]}
-                onPress={() => toggleBagaji(index, 50)}
-              >
-                <Text
-                  style={[
-                    styles.bagajiButtonText,
-                    roundInputs[index].bagaji === 50 &&
-                      styles.bagajiButtonTextSelected,
-                  ]}
-                >
-                  +50
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.previewText}>최종 점수: {finalScore}점</Text>
-          </View>
-        );
-      })}
-
-      <TouchableOpacity
-        style={styles.rankingButton}
-        onPress={() => setShowRanking((prev) => !prev)}
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.rankingButtonText}>
-          {showRanking ? '순위 숨기기' : '순위 보기'}
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.topCard}>
+          <Text style={styles.title}>🎴 게임 진행</Text>
 
-      {showRanking && (
-        <View style={styles.rankingCard}>
-          <Text style={styles.rankingTitle}>현재 순위</Text>
-          {ranking.map((item, index) => (
-            <View key={item.name + index} style={styles.rankingRow}>
-              <Text style={styles.rankingText}>
-                {index + 1}위 {item.name}
-              </Text>
-              <Text style={styles.rankingText}>{item.score}점</Text>
-            </View>
-          ))}
+          <View style={styles.roundWrap}>
+            <View style={styles.roundLine} />
+            <Text style={styles.roundText}>
+              현재 <Text style={styles.roundHighlight}>{currentRound}</Text> / {totalRounds} 판
+            </Text>
+            <View style={styles.roundLine} />
+          </View>
+
+          <Text style={styles.helperText}>스톱 기준값 {stopThreshold}</Text>
         </View>
-      )}
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveRound}>
-        <Text style={styles.saveButtonText}>이번 판 저장</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {players.map((player, index) => {
+          const hasError = inputErrors[index] !== '';
+          const isBbungSelected = roundInputs[index].bagaji === 30;
+          const isStopSelected = roundInputs[index].bagaji === 50;
+          const bagajiMeta = getBagajiMeta(roundInputs[index].bagaji);
+
+          return (
+            <View key={index} style={styles.playerCard}>
+              <View style={styles.playerHeaderRow}>
+                <View>
+                  <Text style={styles.playerName}>{player}</Text>
+                  <Text style={styles.totalScore}>
+                    누적 점수 <Text style={styles.totalScoreValue}>{totalScores[index]}</Text>
+                  </Text>
+                </View>
+
+                {roundInputs[index].bagaji > 0 ? (
+                  <View style={styles.activeBadge}>
+                    <Text style={styles.activeBadgeEmoji}>{bagajiMeta.emoji}</Text>
+                    <Text style={styles.activeBadgeText}>{bagajiMeta.short}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.idleBadge}>
+                    <Text style={styles.idleBadgeText}>🎴 대기</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.sectionBox}>
+                <Text style={styles.sectionLabel}>기본 점수</Text>
+                <TextInput
+                  ref={(ref) => {
+                    inputRefs.current[index] = ref;
+                  }}
+                  style={[styles.input, hasError && styles.inputError]}
+                  placeholder="점수 입력"
+                  placeholderTextColor="#999999"
+                  keyboardType="numeric"
+                  value={roundInputs[index].baseScore}
+                  onChangeText={(text) => updateBaseScore(index, text)}
+                  returnKeyType="done"
+                />
+                {hasError && <Text style={styles.errorText}>{inputErrors[index]}</Text>}
+              </View>
+
+              <View style={styles.sectionBox}>
+                <Text style={styles.sectionLabel}>바가지 선택</Text>
+
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.bagajiButton,
+                      styles.bbungButton,
+                      isBbungSelected && styles.bbungButtonSelected,
+                    ]}
+                    onPress={() => toggleBagaji(index, 30)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.bagajiTopRow}>
+                      <Text style={styles.bagajiEmoji}>💥</Text>
+                      <Text
+                        style={[
+                          styles.bagajiChip,
+                          isBbungSelected && styles.bagajiChipSelectedLight,
+                        ]}
+                      >
+                        +30
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.bagajiLabel,
+                        isBbungSelected && styles.bagajiLabelSelectedLight,
+                      ]}
+                    >
+                      뻥바가지!
+                    </Text>
+                    <Text
+                      style={[
+                        styles.bagajiSubText,
+                        isBbungSelected && styles.bagajiSubTextSelectedLight,
+                      ]}
+                    >
+                      앗, 나를 씌우다니 +30!
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.bagajiButton,
+                      styles.stopButton,
+                      isStopSelected && styles.stopButtonSelected,
+                    ]}
+                    onPress={() => toggleBagaji(index, 50)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.bagajiTopRow}>
+                      <Text style={styles.bagajiEmoji}>🛑</Text>
+                      <Text
+                        style={[
+                          styles.bagajiChip,
+                          isStopSelected && styles.bagajiChipSelectedDark,
+                        ]}
+                      >
+                        +50
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.bagajiLabel,
+                        isStopSelected && styles.bagajiLabelSelectedDark,
+                      ]}
+                    >
+                      스톱바가지!
+                    </Text>
+                    <Text
+                      style={[
+                        styles.bagajiSubText,
+                        isStopSelected && styles.bagajiSubTextSelectedDark,
+                      ]}
+                    >
+                      이런, 또 당했다 +50!
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.previewBox,
+                  roundInputs[index].bagaji === 30 && styles.previewBoxBbung,
+                  roundInputs[index].bagaji === 50 && styles.previewBoxStop,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.previewText,
+                    roundInputs[index].bagaji > 0 && styles.previewTextAccent,
+                  ]}
+                >
+                  {getPreviewText(roundInputs[index])}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => setShowRanking(true)}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.secondaryButtonText}>🎴 순위 보기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleSaveRound}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.saveButtonText}>
+            {currentRound === totalRounds ? '결과 보기' : '이번 판 확정!'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal
+        visible={showRanking}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRanking(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>🎴 현재 순위</Text>
+
+            {ranking.map((item, index) => (
+              <View key={item.name + index} style={styles.rankRow}>
+                <View style={styles.rankLeft}>
+                  <Text style={[styles.rankMedal, index === 0 && styles.rankMedalFirst]}>
+                    {index === 0 ? '🏆' : '•'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rankText,
+                      index === 0 && styles.firstRankText,
+                    ]}
+                  >
+                    {index + 1}위 {item.name}
+                  </Text>
+                </View>
+
+                <Text
+                  style={[
+                    styles.rankScore,
+                    index === 0 && styles.firstRankText,
+                  ]}
+                >
+                  {item.score}
+                </Text>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowRanking(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.closeButtonText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#FFF7F3',
+  },
   container: {
-    padding: 20,
+    padding: 18,
     paddingBottom: 40,
-    backgroundColor: '#ffffff',
+  },
+  topCard: {
+    backgroundColor: '#FFFDFC',
+    borderWidth: 1,
+    borderColor: '#F1DDD7',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 16,
+    marginTop: 4,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    marginTop: 20,
+    color: '#111111',
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  helperText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#666',
-  },
-  playerCard: {
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e8e8e8',
-    backgroundColor: '#fafafa',
-  },
-  playerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  roundWrap: {
+    marginTop: 18,
+    marginBottom: 4,
     alignItems: 'center',
   },
+  roundLine: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E9D5CF',
+  },
+  roundText: {
+    marginVertical: 12,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111111',
+    textAlign: 'center',
+  },
+  roundHighlight: {
+    color: '#D93A2F',
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#7A6B66',
+    textAlign: 'center',
+  },
+  playerCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 16,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  playerHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   playerName: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
-    color: '#222',
+    color: '#111111',
   },
   totalScore: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#555',
+    marginTop: 6,
+    fontSize: 14,
+    color: '#666666',
   },
-  label: {
-    marginTop: 14,
-    marginBottom: 8,
-    fontSize: 15,
+  totalScoreValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111111',
+  },
+  activeBadge: {
+    minWidth: 72,
+    backgroundColor: '#FFF0EE',
+    borderWidth: 1,
+    borderColor: '#F2C2BC',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeBadgeEmoji: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  activeBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D93A2F',
+  },
+  idleBadge: {
+    backgroundColor: '#F8F1EE',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  idleBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#333',
+    color: '#8B7A73',
+  },
+  sectionBox: {
+    marginTop: 16,
+  },
+  sectionLabel: {
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#463C39',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingVertical: 12,
+    height: 50,
+    borderWidth: 1.5,
+    borderColor: '#E1D4CF',
+    borderRadius: 14,
     paddingHorizontal: 14,
     fontSize: 16,
-    backgroundColor: '#fff',
+    color: '#111111',
+    backgroundColor: '#FFFDFC',
   },
   inputError: {
-    borderColor: '#e53935',
+    borderColor: '#E53935',
     borderWidth: 2,
   },
   errorText: {
-    marginTop: 6,
+    marginTop: 8,
     fontSize: 13,
-    color: '#e53935',
+    color: '#E53935',
     fontWeight: '500',
   },
-  bagajiRow: {
+  buttonRow: {
     flexDirection: 'row',
     gap: 10,
   },
   bagajiButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    backgroundColor: '#ececec',
-  },
-  bagajiButtonSelected: {
-    backgroundColor: '#222',
-  },
-  bagajiButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#222',
-  },
-  bagajiButtonTextSelected: {
-    color: '#fff',
-  },
-  previewText: {
-    marginTop: 14,
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  rankingButton: {
-    marginTop: 24,
+    flex: 1,
+    borderRadius: 16,
     paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#efefef',
-    alignItems: 'center',
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
   },
-  rankingButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#222',
+  bbungButton: {
+    backgroundColor: '#FFF2F0',
+    borderColor: '#F1B8AF',
   },
-  rankingCard: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#f7f7f7',
-    borderWidth: 1,
-    borderColor: '#ececec',
+  stopButton: {
+    backgroundColor: '#FFF6EC',
+    borderColor: '#EDC98D',
   },
-  rankingTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 10,
+  bbungButtonSelected: {
+    backgroundColor: '#FFE0DB',
+    borderColor: '#D93A2F',
   },
-  rankingRow: {
+  stopButtonSelected: {
+    backgroundColor: '#2A211F',
+    borderColor: '#2A211F',
+  },
+  bagajiTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  rankingText: {
-    fontSize: 15,
-    color: '#222',
-  },
-  saveButton: {
-    marginTop: 24,
-    backgroundColor: '#222',
-    borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
   },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 17,
+  bagajiEmoji: {
+    fontSize: 22,
+  },
+  bagajiChip: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#555555',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  bagajiChipSelectedLight: {
+    backgroundColor: '#D93A2F',
+    color: '#FFFFFF',
+  },
+  bagajiChipSelectedDark: {
+    backgroundColor: '#FFFFFF',
+    color: '#111111',
+  },
+  bagajiLabel: {
+    marginTop: 12,
+    fontSize: 16,
     fontWeight: '700',
+    color: '#1E1E1E',
+  },
+  bagajiLabelSelectedLight: {
+    color: '#B7251B',
+  },
+  bagajiLabelSelectedDark: {
+    color: '#FFFFFF',
+  },
+  bagajiSubText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#7A6B66',
+    fontWeight: '600',
+  },
+  bagajiSubTextSelectedLight: {
+    color: '#8F2A21',
+  },
+  bagajiSubTextSelectedDark: {
+    color: '#E7D9D4',
+  },
+  previewBox: {
+    marginTop: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#F9F3F1',
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
+  },
+  previewBoxBbung: {
+    backgroundColor: '#FFF0ED',
+    borderColor: '#F1B8AF',
+  },
+  previewBoxStop: {
+    backgroundColor: '#FFF7EA',
+    borderColor: '#EDC98D',
+  },
+  previewText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2A2220',
+  },
+  previewTextAccent: {
+    color: '#B92B20',
+  },
+  secondaryButton: {
+    marginTop: 24,
+    borderWidth: 1.5,
+    borderColor: '#1F1A18',
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F1A18',
+  },
+  saveButton: {
+    marginTop: 14,
+    backgroundColor: '#D93A2F',
+    borderRadius: 14,
+    paddingVertical: 17,
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(17, 17, 17, 0.38)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFDFC',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F0DEDA',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#111111',
+    marginBottom: 16,
+  },
+  rankRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3ECE9',
+  },
+  rankLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rankMedal: {
+    width: 24,
+    fontSize: 14,
+    color: '#A08B84',
+  },
+  rankMedalFirst: {
+    fontSize: 16,
+  },
+  rankText: {
+    fontSize: 16,
+    color: '#111111',
+    fontWeight: '600',
+  },
+  rankScore: {
+    fontSize: 16,
+    color: '#111111',
+    fontWeight: '500',
+  },
+  firstRankText: {
+    color: '#D93A2F',
+    fontWeight: '600',
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#1F1A18',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
