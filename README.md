@@ -1,8 +1,27 @@
 # 📌 뻥노트 (BbungNote)
 
-> 게임의 흐름을 끊지 않는 점수 기록 경험을 만드는 모바일 앱
+> 나이롱 뻥(화투 게임) 중 번거로운 점수 계산을 더 빠르고 직관적으로 해결하기 위해 만든 MVP 앱
 
----
+![React Native](https://img.shields.io/badge/React%20Native-Expo-000000?logo=expo&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript&logoColor=black)
+![Storage](https://img.shields.io/badge/Storage-AsyncStorage-4A90E2)
+![Status](https://img.shields.io/badge/Status-MVP-success)
+
+![bbungnote-cover](./assets/icon.png)
+
+## 📚 Table of Contents
+
+- [Overview](#-overview)
+- [Problem](#-problem)
+- [Solution](#-solution)
+- [Key Features](#-key-features)
+- [UX Design Focus](#-ux-design-focus)
+- [User Flow](#-user-flow)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Future Improvements](#-future-improvements)
+
 
 ## 🧩 Overview
 
